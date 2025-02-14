@@ -12,3 +12,6 @@ The parts along with the plans are pictured here [partsAndPlans.jpg](/photos/par
 The "motherboard" looks like this:  [customMotherBoardView1.jpg](photos/customMotherBoardView1.jpg), [customMotherBoardView3.jpg](photos/customMotherBoardView3.jpg), [customMotherBoardView3.jpg](photos/customMotherBoardView3.jpg)
 
 A video showing a demonstration is [here](https://youtube.com/shorts/qaSmQxihDBw?feature=share).
+
+Possible improvements could entail adding a private key hidden from view that would enable creation of cryptographic signatures and exposure of a public key. Links based on the efuse are at this [gist](https://gist.github.com/bshambaugh/b89d0d5e122b038896bcdb59fd6fbb13). This could allow for the following of the route taken with the [Blinky Project](https://github.com/bshambaugh/BlinkyProject) to develop a hardware based [Ceramic Network](https://ceramic.network/) Signer. 
+
