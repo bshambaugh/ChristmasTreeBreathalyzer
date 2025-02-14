@@ -10,3 +10,5 @@ The plans for development are here [plans.jpg](/photos/plans.jpg).
 The parts along with the plans are pictured here [partsAndPlans.jpg](/photos/partsAndPlans.jpg).
 
 The "motherboard" looks like this:  [customMotherBoardView1.jpg](photos/customMotherBoardView1.jpg), [customMotherBoardView3.jpg](photos/customMotherBoardView3.jpg), [customMotherBoardView3.jpg](photos/customMotherBoardView3.jpg)
+
+A video showing a demonstration is [here](https://youtube.com/shorts/qaSmQxihDBw?feature=share).
