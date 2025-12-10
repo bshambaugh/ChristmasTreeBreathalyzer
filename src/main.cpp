@@ -1,28 +1,40 @@
 #include <Arduino.h>
-/* with the pull-up resistor*/
 
+const int buttonPin = 8;
+const int ledPin    = 10;
 
-int buttonPin = 8; //5
-int Led = 10;
-
-unsigned long time_value;
+unsigned long pressStartTime = 0;
+bool wasPressed = false;
 
 void setup() {
-pinMode(buttonPin,INPUT);
-pinMode(Led,OUTPUT);
-Serial.begin(115200);
+  pinMode(buttonPin, INPUT_PULLUP);  // Important: use internal pull-up!
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(115200);
+  Serial.println("Button duration tester ready");
 }
 
 void loop() {
-int buttonState = digitalRead(buttonPin); //read the state of the button input
-if (buttonState == LOW) { //pressing the button will produce a LOW state 0V
-digitalWrite(Led,HIGH); //the led with turn on
-Serial.println(buttonState);
-} else{
-digitalWrite(Led,LOW); //the led with turn off
-} Serial.println(buttonState); //check in the serial monitor
-}
+  int buttonState = digitalRead(buttonPin);  // LOW = pressed (with pull-up)
 
+  if (buttonState == LOW && !wasPressed) {
+    // Button just got pressed → mark the start time
+    pressStartTime = millis();
+    digitalWrite(ledPin, HIGH);
+    wasPressed = true;
+    Serial.println("Button PRESSED");
+  }
+  
+  if (buttonState == HIGH && wasPressed) {
+    // Button just got released → calculate and print duration
+    unsigned long duration = millis() - pressStartTime;
+    digitalWrite(ledPin, LOW);
+    wasPressed = false;
+    
+    Serial.print("Button was held for: ");
+    Serial.print(duration);
+    Serial.println(" ms");
+  }
+}
 /*
 
 void setup() {
