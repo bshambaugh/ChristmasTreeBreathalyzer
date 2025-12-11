@@ -14,6 +14,7 @@ void SecuritySettingsService::begin() {
   configureJWTHandler();
 }
 
+/*
 Authentication SecuritySettingsService::authenticateRequest(AsyncWebServerRequest* request) {
   AsyncWebHeader* authorizationHeader = request->getHeader(AUTHORIZATION_HEADER);
   if (authorizationHeader) {
@@ -27,6 +28,79 @@ Authentication SecuritySettingsService::authenticateRequest(AsyncWebServerReques
     String value = tokenParamater->value();
     return authenticateJWT(value);
   }
+  return Authentication();
+}
+*/
+
+/*
+Authentication SecuritySettingsService::authenticateRequest(AsyncWebServerRequest *request) {
+  // JWT from Authorization header
+  const AsyncWebHeader* authorizationHeader = request->getHeader(AUTHORIZATION_HEADER);
+  if (authorizationHeader) {
+    String value = authorizationHeader->value();
+    if (value.startsWith("Bearer ")) {
+      value = value.substring(7);
+      return authenticateJWT(value.c_str());
+    }
+  }
+
+  // JWT from query parameter (for WebSocket handshake)
+  const AsyncWebParameter* tokenParamater = request->getParam(ACCESS_TOKEN_PARAMATER);
+  if (tokenParamater) {
+    return authenticateJWT(tokenParamater->value().c_str());
+  }
+
+  return Authentication();
+}
+*/
+
+/*
+Authentication SecuritySettingsService::authenticateRequest(AsyncWebServerRequest *request) {
+  // 1. Try Authorization: Bearer <token>
+  const AsyncWebHeader* authHeader = request->getHeader(AUTHORIZATION_HEADER);
+  if (authHeader) {
+    String headerValue = authHeader->value();
+    if (headerValue.startsWith("Bearer ")) {
+      String token = headerValue.substring(7);           // remove "Bearer "
+      if (_jwtHandler.validateToken(token)) {            // this is the correct method name now
+        return Authentication(_jwtHandler.getSubject()); // logged-in user
+      }
+    }
+  }
+
+  // 2. Try ?access_token=<token> (used by WebSocket handshake)
+  const AsyncWebParameter* tokenParam = request->getParam(ACCESS_TOKEN_PARAMATER);
+  if (tokenParam) {
+    String token = tokenParam->value();
+    if (_jwtHandler.validateToken(token)) {
+      return Authentication(_jwtHandler.getSubject());
+    }
+  }
+
+  // 3. Not authenticated
+  return Authentication();
+}
+*/
+
+Authentication SecuritySettingsService::authenticateRequest(AsyncWebServerRequest *request) {
+  // 1. Try Authorization: Bearer <token>
+  const AsyncWebHeader* authorizationHeader = request->getHeader(AUTHORIZATION_HEADER);
+  if (authorizationHeader) {
+    String value = authorizationHeader->value();
+    if (value.startsWith("Bearer ")) {
+      String token = value.substring(7);  // extract token
+      return authenticateJWT(token);      // your existing manual method
+    }
+  }
+
+  // 2. Try ?access_token=<token> in query string (WebSocket handshake)
+  if (request->hasParam(ACCESS_TOKEN_PARAMATER)) {
+    const AsyncWebParameter* tokenParam = request->getParam(ACCESS_TOKEN_PARAMATER);
+    String token = tokenParam->value();
+    return authenticateJWT(token);
+  }
+
+  // 3. Not authenticated
   return Authentication();
 }
 

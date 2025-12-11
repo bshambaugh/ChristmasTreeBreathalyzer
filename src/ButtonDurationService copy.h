@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <HttpEndpoint.h>
 #include <WebSocketTxRx.h>
-#include <SecurityManager.h>          // if you use authentication
 #include "ButtonDuration.h"
 
 #define BUTTON_DURATION_ENDPOINT_PATH "/rest/buttonDuration"

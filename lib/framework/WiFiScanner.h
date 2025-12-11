@@ -11,8 +11,7 @@
 
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
-#include "disable_nghttp2.h"
-#include <WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include <SecurityManager.h>
 
 #define SCAN_NETWORKS_SERVICE_PATH "/rest/scanNetworks"

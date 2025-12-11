@@ -13,8 +13,7 @@
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
 
-#include "disable_nghttp2.h"
-#include <WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include <SecurityManager.h>
 
 #define MAX_MQTT_STATUS_SIZE 1024

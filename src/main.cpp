@@ -1,70 +1,67 @@
 #include <Arduino.h>
+#include <WiFi.h>
 #include <WiFiManager.h>
-#include <ESP8266React.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncTCP.h>
 
-#include "ButtonDuration.h"
+#include <ESP8266React.h>                     // original, untouched framework
 #include "ButtonDurationService.h"
-#//include "disable_nghttp2.h"
 
-// Pins
-const int configButtonPin   = 0;   // BOOT
-const int durationButtonPin = 8;   // BUTTON
-const int ledPin            = 10;  // LED
+// Pins (adjust if you moved them on the Beetle ESP32-C3)
+const int configButtonPin   = 9;    // GPIO9 is usually the BOOT button on C3 boards
+const int durationButtonPin = 8;
+const int ledPin            = 10;
 
 AsyncWebServer server(80);
-ESP8266React esp8266React(&server);
+ESP8266React   esp8266React(&server);
 
-// === MANUAL SERVICE INSTANTIATION (no SERVICE macro) ===
+// Your service — now using the original framework classes (HttpEndpoint, etc.)
 ButtonDurationService buttonDurationService(&server, esp8266React.getSecurityManager());
 
 WiFiManager wifiManager;
-bool shouldSaveConfig = false;
-
-void saveConfigCallback() {
-  Serial.println("WiFiManager: Configuration saved");
-  shouldSaveConfig = true;
-}
-
-void configModeCallback(WiFiManager* myWiFiManager) {
-  Serial.println("WiFiManager: Entered config mode");
-  Serial.print("AP SSID: "); Serial.println(myWiFiManager->getConfigPortalSSID());
-  Serial.print("AP IP: "); Serial.println(WiFi.softAPIP());
-}
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  WiFi.mode(WIFI_STA);
+  // Optional: reset saved settings for testing
+  // wifiManager.resetSettings();
 
-  wifiManager.setSaveConfigCallback(saveConfigCallback);
-  wifiManager.setAPCallback(configModeCallback);
+  wifiManager.setAPCallback([](WiFiManager *myWiFiManager) {
+    Serial.println("Entered Config Mode");
+    Serial.print("AP SSID: ");
+    Serial.println(myWiFiManager->getConfigPortalSSID());
+    Serial.print("AP IP: ");
+    Serial.println(WiFi.softAPIP());
+  });
 
-  if (!wifiManager.autoConnect("AutoConnectAP", "password")) {
-    Serial.println("WiFi connect failed — restarting");
+  if (!wifiManager.autoConnect("ButtonDuration-AP", "12345678")) {
+    Serial.println("Failed to connect — restarting...");
     delay(3000);
     ESP.restart();
   }
 
-  Serial.println("Connected to WiFi");
+  Serial.println("WiFi connected!");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
 
-  // Start the React framework (registers security, MQTT, etc.)
+  // Start the whole React framework (security, settings service, etc.)
   esp8266React.begin();
 
-  // === IMPORTANT: Register your service endpoints AFTER esp8266React.begin() ===
+  // Register your custom service AFTER esp8266React.begin()
   buttonDurationService.begin();
 
-  // Configure pins
+  // Setup the physical pins
   buttonDurationService.setupPins(durationButtonPin, ledPin);
 
-  // Start web server
+  // Start the async server (framework already added its routes, we just start listening)
   server.begin();
 
-  Serial.print("Ready! Open http://");
-  Serial.println(WiFi.localIP());
+  Serial.println("HTTP server started — open the IP in your browser");
 }
 
 void loop() {
+  // The framework and your service do all the work
   esp8266React.loop();
   buttonDurationService.loop();
 }
