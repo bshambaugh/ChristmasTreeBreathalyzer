@@ -1,100 +1,34 @@
 #include <Arduino.h>
-#include <WiFiManager.h>  // tzapu/WiFiManager (from DroneBot Workshop tutorial)
+#include <WiFiManager.h>
 #include <ESP8266React.h>
 
+#include "ButtonDuration.h"
+#include "ButtonDurationService.h"
 
-// Pins: ESP32-C3 friendly (GPIO0 = BOOT button for config; GPIO8 = onboard LED often works for duration)
-const int configButtonPin = 0;    // BOOT button for WiFi config trigger
-const int durationButtonPin = 8;  // Duration button/LED (adjust if your wiring differs)
-const int ledPin = 8;             // Onboard LED on many C3 boards
-
-// Globals for duration service
-unsigned long pressStartTime = 0;
-bool wasPressed = false;
-
-// WiFiManager globals
-bool shouldSaveConfig = false;
-WiFiManager wifiManager;
-
-// Custom service for button duration (unchanged from your code)
-class ButtonDurationService : public StatefulService<ButtonDurationService> {
-public:
-  unsigned long durationMs = 0;
-
-  void setup() {
-    pinMode(durationButtonPin, INPUT_PULLUP);  // Internal pull-up
-    pinMode(ledPin, OUTPUT);
-    pinMode(configButtonPin, INPUT_PULLUP);    // BOOT button
-  }
-
-  void loop() {
-    // Duration logic
-    bool buttonState = !digitalRead(durationButtonPin);  // LOW = pressed
-    if (buttonState && !wasPressed) {
-      pressStartTime = millis();
-      digitalWrite(ledPin, HIGH);
-      wasPressed = true;
-    } else if (!buttonState && wasPressed) {
-      this->durationMs = millis() - pressStartTime;
-      digitalWrite(ledPin, LOW);
-      wasPressed = false;
-      this->publishState();  // Pushes to React UI via WebSocket
-    }
-
-    // Config button: Hold BOOT + press EN/RESET to enter portal (non-blocking check)
-    if (digitalRead(configButtonPin) == LOW) {
-      Serial.println("Config button pressed—starting portal");
-      wifiManager.setConfigPortalTimeout(120);  // 2 min timeout
-      if (!wifiManager.startConfigPortal("OnDemandAP")) {
-        Serial.println("Failed to start portal and hit timeout");
-        delay(3000);
-        ESP.restart();
-      }
-      Serial.println("Config portal closed—connected!");
-      while (digitalRead(configButtonPin) == LOW) delay(100);  // Debounce
-    }
-
-    // Save callback trigger
-    if (shouldSaveConfig) {
-      Serial.println("Configuration saved");
-      shouldSaveConfig = false;
-    }
-  }
-
-  // JSON read: Expose state to React UI
-  static void read(const ButtonDurationService& state, JsonObject& root) {
-    root["duration_ms"] = state.durationMs;
-    root["status"] = state.durationMs > 0 ? F("Pressed for X ms") : F("Idle");
-  }
-
-  // JSON write: Optional reset from UI
-  static StateUpdateResult update(JsonObject& root, ButtonDurationService& state) {
-    if (root.containsKey("reset")) {
-      state.durationMs = 0;
-      return StateUpdateResult::CHANGED;
-    }
-    return StateUpdateResult::UNCHANGED;
-  }
-};
-
-BUTTON_DURATION_SERVICE(buttonService);  // Registers the service
-
-ESP8266React esp8266React(&server);
-
+// Pins (edit for your board)
+const int configButtonPin   = 0;  // BOOT
+const int durationButtonPin = 8;  // BUTTON
+const int ledPin            = 10; // LED
 
 AsyncWebServer server(80);
+ESP8266React esp8266React(&server);
 
-// Save callback (from tutorial)
+// Register service using macros like official examples
+SERVICE(ButtonDurationService, buttonDurationService, (&server, esp8266React.getSecurityManager()));
+
+WiFiManager wifiManager;
+bool shouldSaveConfig = false;
+
+// WiFiManager callbacks
 void saveConfigCallback() {
-  Serial.println("Configuration saved");
+  Serial.println("WiFiManager: Configuration saved");
   shouldSaveConfig = true;
 }
 
-// AP mode callback
-void configModeCallback(WiFiManager *myWiFiManager) {
-  Serial.println("Entered Configuration Mode");
-  Serial.print("Config SSID: "); Serial.println(myWiFiManager->getConfigPortalSSID());
-  Serial.print("Config IP: "); Serial.println(WiFi.softAPIP());
+void configModeCallback(WiFiManager* myWiFiManager) {
+  Serial.println("WiFiManager: Entered config mode");
+  Serial.print("AP SSID: "); Serial.println(myWiFiManager->getConfigPortalSSID());
+  Serial.print("AP IP: "); Serial.println(WiFi.softAPIP());
 }
 
 void setup() {
@@ -103,33 +37,32 @@ void setup() {
 
   WiFi.mode(WIFI_STA);
 
-
-  // Optional: Wipe settings for testing (comment out in production)
-  // wifiManager.resetSettings();
-
-  // Register callbacks
   wifiManager.setSaveConfigCallback(saveConfigCallback);
   wifiManager.setAPCallback(configModeCallback);
 
-  // Auto-connect: Starts "AutoConnectAP" AP (password: "password") if no saved creds
-  bool res = wifiManager.autoConnect("AutoConnectAP", "password");
-  if (!res) {
-    Serial.println("Failed to connect and hit timeout");
+  if (!wifiManager.autoConnect("AutoConnectAP", "password")) {
+    Serial.println("WiFi connect failed — restarting");
     delay(3000);
     ESP.restart();
-    delay(5000);
-  } else {
-    Serial.println("Connected...yeey :)");
   }
 
-  // Init service and framework (once connected)
-  buttonService.begin();
+  Serial.println("Connected.");
+
+  // Start framework
   esp8266React.begin();
+
+  // Configure button service pins
+  buttonDurationService.setupPins(durationButtonPin, ledPin);
+  buttonDurationService.begin();
+
+  // Start HTTP/WebSocket server
   server.begin();
-  Serial.println("ESP32-C3 React + WiFiManager Ready! IP: " + WiFi.localIP().toString());
+
+  Serial.print("Ready! Open http://");
+  Serial.println(WiFi.localIP());
 }
 
 void loop() {
   esp8266React.loop();
-  buttonService.loop();  // Your custom logic
+  buttonDurationService.loop();
 }
