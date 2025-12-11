@@ -8,7 +8,7 @@
 #include "ButtonDurationService.h"
 
 // Pins (adjust if you moved them on the Beetle ESP32-C3)
-const int configButtonPin   = 9;    // GPIO9 is usually the BOOT button on C3 boards
+//const int configButtonPin   = 9;    // GPIO9 is usually the BOOT button on C3 boards
 const int durationButtonPin = 8;
 const int ledPin            = 10;
 
