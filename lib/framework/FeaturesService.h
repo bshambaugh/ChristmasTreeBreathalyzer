@@ -13,7 +13,8 @@
 
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
-#include <ESPAsyncWebServer.h>
+#include "disable_nghttp2.h"
+#include <WebServer.h>
 
 #define MAX_FEATURES_SIZE 256
 #define FEATURES_SERVICE_PATH "/rest/features"

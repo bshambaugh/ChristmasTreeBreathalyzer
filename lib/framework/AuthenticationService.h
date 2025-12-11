@@ -3,7 +3,8 @@
 
 #include <Features.h>
 #include <AsyncJson.h>
-#include <ESPAsyncWebServer.h>
+#include "disable_nghttp2.h"
+#include <WebServer.h>
 #include <SecurityManager.h>
 
 #define VERIFY_AUTHORIZATION_PATH "/rest/verifyAuthorization"

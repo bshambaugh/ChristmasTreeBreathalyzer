@@ -11,7 +11,8 @@
 
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
-#include <ESPAsyncWebServer.h>
+#include "disable_nghttp2.h"
+#include <WebServer.h>
 #include <IPUtils.h>
 #include <SecurityManager.h>
 

@@ -3,7 +3,9 @@
 
 #include <Features.h>
 #include <ArduinoJsonJWT.h>
-#include <ESPAsyncWebServer.h>
+//#include <WebServer.h>
+#include "disable_nghttp2.h"
+#include <WebServer.h>
 #include <AsyncJson.h>
 #include <list>
 

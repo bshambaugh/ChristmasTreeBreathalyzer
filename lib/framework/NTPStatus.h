@@ -14,7 +14,9 @@
 
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
-#include <ESPAsyncWebServer.h>
+
+#include "disable_nghttp2.h"
+#include <WebServer.h>
 #include <SecurityManager.h>
 
 #define MAX_NTP_STATUS_SIZE 1024

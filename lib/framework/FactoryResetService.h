@@ -9,7 +9,8 @@
 #include <ESPAsyncTCP.h>
 #endif
 
-#include <ESPAsyncWebServer.h>
+#include "disable_nghttp2.h"
+#include <WebServer.h>
 #include <SecurityManager.h>
 #include <RestartService.h>
 #include <FS.h>
