@@ -5,20 +5,21 @@
 #include "ButtonDuration.h"
 #include "ButtonDurationService.h"
 
-// Pins
-const int configButtonPin   = 0;   // BOOT
-const int durationButtonPin = 8;   // BUTTON
-const int ledPin            = 10;  // LED
+// Pins (edit for your board)
+const int configButtonPin   = 0;  // BOOT
+const int durationButtonPin = 8;  // BUTTON
+const int ledPin            = 10; // LED
 
 AsyncWebServer server(80);
 ESP8266React esp8266React(&server);
 
-// === MANUAL SERVICE INSTANTIATION (no SERVICE macro) ===
-ButtonDurationService buttonDurationService(&server, esp8266React.getSecurityManager());
+// Register service using macros like official examples
+SERVICE(ButtonDurationService, buttonDurationService, (&server, esp8266React.getSecurityManager()));
 
 WiFiManager wifiManager;
 bool shouldSaveConfig = false;
 
+// WiFiManager callbacks
 void saveConfigCallback() {
   Serial.println("WiFiManager: Configuration saved");
   shouldSaveConfig = true;
@@ -45,18 +46,16 @@ void setup() {
     ESP.restart();
   }
 
-  Serial.println("Connected to WiFi");
+  Serial.println("Connected.");
 
-  // Start the React framework (registers security, MQTT, etc.)
+  // Start framework
   esp8266React.begin();
 
-  // === IMPORTANT: Register your service endpoints AFTER esp8266React.begin() ===
+  // Configure button service pins
+  buttonDurationService.setupPins(durationButtonPin, ledPin);
   buttonDurationService.begin();
 
-  // Configure pins
-  buttonDurationService.setupPins(durationButtonPin, ledPin);
-
-  // Start web server
+  // Start HTTP/WebSocket server
   server.begin();
 
   Serial.print("Ready! Open http://");

@@ -27,8 +27,17 @@ void ButtonDurationService::setupPins(int buttonPin, int ledPin) {
   pinMode(_ledPin, OUTPUT);
 }
 
+/*
 void ButtonDurationService::begin() {
   _state.durationMs = 0;
+}
+*/
+
+void ButtonDurationService::begin() {
+    update([](ButtonDuration& state) {
+      state.durationMs = 0;
+      return StateUpdateResult::CHANGED;
+    }, "init");
 }
 
 void ButtonDurationService::loop() {

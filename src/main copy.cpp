@@ -15,36 +15,53 @@ bool wasPressed = false;
 WiFiManager wifiManager;
 bool shouldSaveConfig = false;
 
-// Your custom service – state is the instance itself (common pattern)
-class ButtonDurationService : public StatefulService<ButtonDurationService> {
- public:
-  unsigned long durationMs = 0;  // Exposed state
-
-  void setup() {
-    pinMode(durationButtonPin, INPUT_PULLUP);
-    pinMode(ledPin, OUTPUT);
-    pinMode(configButtonPin, INPUT_PULLUP);
-  }
-
-  void loop() {
-    // --- Button duration logic ---
-    bool buttonState = !digitalRead(durationButtonPin);  // LOW = pressed
-    if (buttonState && !wasPressed) {
-      pressStartTime = millis();
-      digitalWrite(ledPin, HIGH);
-      wasPressed = true;
-    } else if (!buttonState && wasPressed) {
-      // Update state via framework's update() → triggers WebSocket push
-    this->update([&](ButtonDurationService& state) {
-    state.durationMs = millis() - pressStartTime;
-    return StateUpdateResult::CHANGED;
-    }, "button_release");
-
-      digitalWrite(ledPin, LOW);
-      wasPressed = false;
+class ButtonDuration {
+  public:
+    unsigned long durationMs;
+  
+    static void read(ButtonDuration& state, JsonObject& root) {
+      root["duration_ms"] = state.durationMs;
     }
+  
+    static StateUpdateResult update(JsonObject& root, ButtonDuration& state) {
+      if (root.containsKey("reset")) {
+        state.durationMs = 0;
+        return StateUpdateResult::CHANGED;
+      }
+      return StateUpdateResult::UNCHANGED;
+    }
+  };
+  
+  
+  class ButtonDurationService : public StatefulService<ButtonDuration> {
+    public:
+      void setup() {
+        pinMode(durationButtonPin, INPUT_PULLUP);
+        pinMode(ledPin, OUTPUT);
+        pinMode(configButtonPin, INPUT_PULLUP);
+      }
+    
+      void loop() {
+        bool buttonState = !digitalRead(durationButtonPin);
+    
+        if (buttonState && !wasPressed) {
+          pressStartTime = millis();
+          digitalWrite(ledPin, HIGH);
+          wasPressed = true;
+        } 
+        else if (!buttonState && wasPressed) {
+    
+          this->update([&](ButtonDuration& state) {
+            state.durationMs = millis() - pressStartTime;
+            return StateUpdateResult::CHANGED;
+          }, "button_release");
+    
+          digitalWrite(ledPin, LOW);
+          wasPressed = false;
+        }
+      }
 
-    // --- On-demand WiFi config portal (press BOOT button) ---
+      // --- On-demand WiFi config portal (press BOOT button) ---
     if (digitalRead(configButtonPin) == LOW) {
       Serial.println("Config button pressed — starting portal");
       wifiManager.setConfigPortalTimeout(120);
@@ -61,24 +78,8 @@ class ButtonDurationService : public StatefulService<ButtonDurationService> {
       Serial.println("Configuration saved");
       shouldSaveConfig = false;
     }
-  }
-
-  // JSON serialization for UI
-  static void read(const ButtonDurationService& state, JsonObject& root) {
-    root["duration_ms"] = state.durationMs;
-    root["status"] = state.durationMs > 0 ? F("Last press: %lu ms") : F("Idle");
-  }
-
-  // Optional: Handle writes from UI (e.g., reset button)
-  static StateUpdateResult update(JsonObject& root, ButtonDurationService& state) {
-    if (root.containsKey("reset")) {
-      state.durationMs = 0;
-      return StateUpdateResult::CHANGED;
-    }
-    return StateUpdateResult::UNCHANGED;
-  }
-};
-
+}
+    
 BUTTON_DURATION_SERVICE(buttonService);  // Registers the service
 
 // Framework
