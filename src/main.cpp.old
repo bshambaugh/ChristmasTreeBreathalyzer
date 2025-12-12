@@ -1,0 +1,58 @@
+#include <Arduino.h>
+
+const int buttonPin = 8;
+const int ledPin    = 10;
+
+unsigned long pressStartTime = 0;
+bool wasPressed = false;
+
+void setup() {
+  pinMode(buttonPin, INPUT_PULLUP);  // Important: use internal pull-up!
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(115200);
+  Serial.println("Button duration tester ready");
+}
+
+void loop() {
+  int buttonState = digitalRead(buttonPin);  // LOW = pressed (with pull-up)
+
+  if (buttonState == LOW && !wasPressed) {
+    // Button just got pressed → mark the start time
+    pressStartTime = millis();
+    digitalWrite(ledPin, HIGH);
+    wasPressed = true;
+    Serial.println("Button PRESSED");
+    unsigned long currentDuration = millis() - pressStartTime;
+    Serial.print("Holding for: ");
+    Serial.print(currentDuration);
+    Serial.println(" ms\r ");
+  }
+  
+  if (buttonState == HIGH && wasPressed) {
+    // Button just got released → calculate and print duration
+    unsigned long duration = millis() - pressStartTime;
+    digitalWrite(ledPin, LOW);
+    wasPressed = false;
+    
+    Serial.print("Button was held for: ");
+    Serial.print(duration);
+    Serial.println(" ms");
+  }
+}
+/*
+
+void setup() {
+   pinMode(LED_BUILTIN, HIGH);
+   Serial.begin(115200);
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  Serial.print("I am high");
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
+  Serial.print("I am sober");
+  delay(1000);
+}
+
+*/
